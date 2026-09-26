@@ -1,0 +1,47 @@
+model:
+  model_name: "distilbert-base-uncased"
+  num_labels: 3
+  label_names:
+    - "negative"
+    - "neutral"
+    - "positive"
+
+dataset:
+  dataset_name: "cardiffnlp/tweet_sentiment_multilingual"
+  dataset_subset: "english"
+  revision: "refs/convert/parquet"
+  max_length: 128
+  seed: 42
+
+training:
+  output_dir: "./artifacts/checkpoints"
+  learning_rate: 2.0e-5
+  per_device_train_batch_size: 16       # 4GB VRAM safety: 16 batch size
+  per_device_eval_batch_size: 16
+  gradient_accumulation_steps: 2       # Effective batch size = 32 (16 * 2)
+  num_train_epochs: 3
+  weight_decay: 0.01
+  eval_strategy: "epoch"
+  save_strategy: "epoch"
+  load_best_model_at_end: true
+  metric_for_best_model: "f1_weighted"
+  fp16: true                            # Tensor Core mixed precision for RTX 3050
+  bf16: false
+  optim: "adamw_torch_fused"            # CUDA-fused AdamW
+  logging_steps: 25
+  report_to: "none"
+  seed: 42
+  save_total_limit: 2
+
+hardware:
+  force_device: "cuda"
+  pin_memory: true
+  num_workers: 0                        # 0 recommended on Windows to avoid process spawning overhead
+  enable_cpp_acceleration: true
+
+paths:
+  raw_data_dir: "./artifacts/data/raw"
+  transformed_data_dir: "./artifacts/data/transformed"
+  model_save_dir: "./artifacts/model"
+  metrics_dir: "./artifacts/metrics"
+  log_dir: "./logs"
