@@ -62,6 +62,14 @@ class PathConfig:
     log_dir: str
 
 
+@dataclass(frozen=True)
+class MLflowConfig:
+    tracking_uri: str
+    experiment_name: str
+    run_name: str
+    log_models: bool
+
+
 class ConfigurationManager:
     """
     Manages loading and validation of system configuration from YAML.
@@ -153,4 +161,13 @@ class ConfigurationManager:
             model_save_dir=cfg["model_save_dir"],
             metrics_dir=cfg["metrics_dir"],
             log_dir=cfg["log_dir"],
+        )
+
+    def get_mlflow_config(self) -> MLflowConfig:
+        cfg = self.config.get("mlflow", {})
+        return MLflowConfig(
+            tracking_uri=cfg.get("tracking_uri", "sqlite:///mlflow.db"),
+            experiment_name=cfg.get("experiment_name", "DistilBERT-Sentiment-Classifier"),
+            run_name=cfg.get("run_name", "distilbert-base-uncased-run"),
+            log_models=bool(cfg.get("log_models", True)),
         )

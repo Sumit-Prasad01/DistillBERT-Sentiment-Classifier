@@ -14,6 +14,16 @@ class PredictionPipeline:
     def __init__(self, model_dir: str = "artifacts/model"):
         try:
             self.model_dir = model_dir
+
+            # Support loading models directly from MLflow URIs (runs:/... or models:/...)
+            if model_dir.startswith(("runs:/", "models:/")):
+                logger.info(f"Downloading model artifact from MLflow URI: '{model_dir}'...")
+                import mlflow
+                os.environ["MLFLOW_ALLOW_FILE_STORE"] = "true"
+                model_dir = mlflow.artifacts.download_artifacts(artifact_uri=model_dir)
+                logger.info(f"Downloaded MLflow model artifact to local path: '{model_dir}'")
+                self.model_dir = model_dir
+
             if not os.path.exists(model_dir):
                 raise FileNotFoundError(
                     f"Model directory '{model_dir}' not found. Please run the training pipeline first."

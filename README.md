@@ -83,24 +83,43 @@ To compile the C++ dynamic collator and metrics engine using MSVC:
 ```
 *(Note: If C++ compilation is skipped, the system automatically falls back to PyTorch's native dynamic collator and scikit-learn without any errors.)*
 
-### 3. Run the Training Pipeline
+### 3. Run the Training Pipeline (with MLflow Experiment Tracking)
 
-Train DistilBERT with 4GB VRAM optimizations:
+Train DistilBERT with 4GB VRAM optimizations and automatic MLflow logging:
 ```powershell
 .\.venv\Scripts\python.exe main.py --mode train
 ```
-This will:
-1. Download and cache the `cardiffnlp/tweet_sentiment_multilingual` dataset.
-2. Tokenize and dynamically pad the sequences.
-3. Train for 3 epochs with FP16 and fused AdamW.
-4. Evaluate on the test set, outputting a classification report and saving the confusion matrix to `artifacts/metrics/confusion_matrix.png`.
-5. Export model weights to `artifacts/model/` and TorchScript `artifacts/model/model.pt`.
 
-### 4. Run Predictions
+Optional CLI overrides for MLflow runs:
+```powershell
+.\.venv\Scripts\python.exe main.py --mode train --experiment_name "DistilBERT-Experiment" --run_name "fp16-fused-adamw"
+```
 
-**Via CLI:**
+This will automatically:
+1. Log pipeline parameters, dataset split sizes, and hardware specs into MLflow.
+2. Stream step-by-step training and validation loss curves via Hugging Face Trainer `report_to="mlflow"`.
+3. Evaluate on the test set and log `test_accuracy`, `test_macro_f1`, `test_weighted_f1`, and per-class metrics.
+4. Log evaluation artifacts to MLflow (`confusion_matrix.png` and `evaluation_metrics.json`).
+5. Save and register model weights, tokenizer, and TorchScript model artifacts (`model.pt`) to MLflow.
+
+### 4. Launch the MLflow UI
+
+View interactive run comparisons, metrics charts, confusion matrix plots, and model artifacts:
+```powershell
+.\.venv\Scripts\mlflow.exe ui --backend-store-uri sqlite:///mlflow.db
+```
+Then open [http://127.0.0.1:5000](http://127.0.0.1:5000) in your browser.
+
+### 5. Run Predictions
+
+**Via CLI (using local model artifacts):**
 ```powershell
 .\.venv\Scripts\python.exe main.py --mode predict --text "I absolutely love this product! Best purchase ever!"
+```
+
+**Via CLI (using MLflow Run Artifacts directly):**
+```powershell
+.\.venv\Scripts\python.exe main.py --mode predict --model_dir runs:/<RUN_ID>/model --text "Amazing customer service!"
 ```
 
 **Via Interactive Console:**

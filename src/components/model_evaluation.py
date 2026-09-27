@@ -109,6 +109,28 @@ class ModelEvaluation:
             logger.info(f"  Weighted F1 Score:{eval_metrics['weighted_f1']:.4f}")
             logger.info("=" * 60)
 
+            # 5. Log metrics and artifacts to MLflow if run is active
+            try:
+                import mlflow
+                if mlflow.active_run():
+                    mlflow_test_metrics = {
+                        "test_accuracy": float(eval_metrics["accuracy"]),
+                        "test_macro_f1": float(eval_metrics["macro_f1"]),
+                        "test_weighted_f1": float(eval_metrics["weighted_f1"]),
+                    }
+                    for label_name in self.model_config.label_names:
+                        if label_name in report_dict:
+                            mlflow_test_metrics[f"test_{label_name}_precision"] = float(report_dict[label_name]["precision"])
+                            mlflow_test_metrics[f"test_{label_name}_recall"] = float(report_dict[label_name]["recall"])
+                            mlflow_test_metrics[f"test_{label_name}_f1"] = float(report_dict[label_name]["f1-score"])
+
+                    mlflow.log_metrics(mlflow_test_metrics)
+                    mlflow.log_artifact(cm_plot_path, artifact_path="evaluation")
+                    mlflow.log_artifact(metrics_json_path, artifact_path="evaluation")
+                    logger.info("Logged test evaluation metrics and artifacts to MLflow.")
+            except Exception as e:
+                logger.warning(f"Could not log evaluation to MLflow: {e}")
+
             return {
                 "evaluation_metrics": eval_metrics,
                 "confusion_matrix_path": cm_plot_path,

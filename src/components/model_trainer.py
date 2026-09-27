@@ -181,6 +181,20 @@ class ModelTrainer:
                 if isinstance(value, float):
                     logger.info(f"  {metric}: {value:.4f}")
 
+            # Log summary training metrics to MLflow if active run exists
+            try:
+                import mlflow
+                if mlflow.active_run():
+                    clean_train_metrics = {
+                        f"train_{k}" if not k.startswith("train_") else k: float(v)
+                        for k, v in train_result.metrics.items()
+                        if isinstance(v, (int, float))
+                    }
+                    mlflow.log_metrics(clean_train_metrics)
+                    logger.info("Logged training summary metrics to active MLflow run.")
+            except Exception as e:
+                logger.warning(f"Could not log training metrics to MLflow: {e}")
+
             return {
                 "model_save_dir": save_dir,
                 "torchscript_path": torchscript_path,

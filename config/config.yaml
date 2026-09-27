@@ -29,7 +29,7 @@ training:
   bf16: false
   optim: "adamw_torch_fused"            # CUDA-fused AdamW
   logging_steps: 25
-  report_to: "none"
+  report_to: "mlflow"
   seed: 42
   save_total_limit: 2
 
@@ -45,3 +45,9 @@ paths:
   model_save_dir: "./artifacts/model"
   metrics_dir: "./artifacts/metrics"
   log_dir: "./logs"
+
+mlflow:
+  tracking_uri: "sqlite:///mlflow.db"   # SQLite database tracking backend (or filesystem './mlruns')
+  experiment_name: "DistilBERT-Sentiment-Classifier"
+  run_name: "distilbert-base-uncased-run"
+  log_models: true

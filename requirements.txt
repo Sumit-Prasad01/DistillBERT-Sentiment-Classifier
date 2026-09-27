@@ -12,3 +12,4 @@ pyyaml>=6.0
 pybind11>=2.13.0
 tqdm>=4.66.0
 setuptools>=70.0.0
+mlflow==3.14.0

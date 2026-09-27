@@ -86,3 +86,25 @@ def set_seed(seed: int = 42) -> None:
         logger.info(f"Random seed set to {seed} across all modules.")
     except Exception as e:
         raise CustomException(e, sys)
+
+
+def setup_mlflow_environment(
+    tracking_uri: str = "sqlite:///mlflow.db",
+    experiment_name: str = "DistilBERT-Sentiment-Classifier"
+) -> None:
+    """
+    Configures MLflow tracking environment variables and backend options.
+    Enables support for both SQLite DB and local filesystem tracking (opt-out of deprecation exception in MLflow 3.x).
+    Disables redundant raw checkpoint artifact dumping from Hugging Face Trainer.
+    """
+    try:
+        import mlflow
+        os.environ["MLFLOW_ALLOW_FILE_STORE"] = "true"
+        os.environ["HF_MLFLOW_LOG_ARTIFACTS"] = "0"
+        os.environ["MLFLOW_TRACKING_URI"] = tracking_uri
+        os.environ["MLFLOW_EXPERIMENT_NAME"] = experiment_name
+        mlflow.set_tracking_uri(tracking_uri)
+        mlflow.set_experiment(experiment_name)
+        logger.info(f"MLflow initialized: Tracking URI='{tracking_uri}', Experiment='{experiment_name}'")
+    except Exception as e:
+        raise CustomException(e, sys)
