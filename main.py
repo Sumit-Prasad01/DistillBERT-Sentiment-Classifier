@@ -94,7 +94,10 @@ def main():
 
         elif args.mode == "predict":
             logger.info(f"Running inference on: \"{args.text}\"")
-            predictor = PredictionPipeline(model_dir=args.model_dir)
+            predictor = PredictionPipeline(
+                model_dir=args.model_dir,
+                tracking_uri=args.tracking_uri,
+            )
             result = predictor.predict(args.text)
 
             print("\n" + "=" * 60)

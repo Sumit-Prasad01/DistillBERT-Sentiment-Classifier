@@ -11,7 +11,7 @@ class PredictionPipeline:
     """
     Inference pipeline for real-time and batch sentiment predictions.
     """
-    def __init__(self, model_dir: str = "artifacts/model"):
+    def __init__(self, model_dir: str = "artifacts/model", tracking_uri: str = None):
         try:
             self.model_dir = model_dir
 
@@ -19,7 +19,49 @@ class PredictionPipeline:
             if model_dir.startswith(("runs:/", "models:/")):
                 logger.info(f"Downloading model artifact from MLflow URI: '{model_dir}'...")
                 import mlflow
+                from mlflow.tracking import MlflowClient
                 os.environ["MLFLOW_ALLOW_FILE_STORE"] = "true"
+
+                if tracking_uri:
+                    mlflow.set_tracking_uri(tracking_uri)
+
+                # Resolve run_name to run_id if runs:/<run_name>/... was supplied
+                if model_dir.startswith("runs:/"):
+                    uri_body = model_dir[len("runs:/"):]
+                    parts = uri_body.split("/", 1)
+                    identifier = parts[0]
+                    subpath = parts[1] if len(parts) > 1 else ""
+
+                    client = MlflowClient()
+                    run_exists = False
+                    try:
+                        client.get_run(identifier)
+                        run_exists = True
+                    except Exception:
+                        run_exists = False
+
+                    if not run_exists:
+                        try:
+                            exp_ids = [e.experiment_id for e in client.search_experiments()]
+                            matching_runs = client.search_runs(
+                                experiment_ids=exp_ids,
+                                filter_string=f"attributes.run_name = '{identifier}'",
+                                order_by=["start_time DESC"],
+                                max_results=1,
+                            )
+                            if matching_runs:
+                                resolved_run_id = matching_runs[0].info.run_id
+                                logger.info(
+                                    f"Resolved MLflow run name '{identifier}' to Run ID: '{resolved_run_id}'"
+                                )
+                                model_dir = f"runs:/{resolved_run_id}/{subpath}"
+                            else:
+                                logger.warning(
+                                    f"No MLflow run found with run name '{identifier}'. Attempting direct download."
+                                )
+                        except Exception as search_err:
+                            logger.warning(f"Could not resolve run name '{identifier}': {search_err}")
+
                 model_dir = mlflow.artifacts.download_artifacts(artifact_uri=model_dir)
                 logger.info(f"Downloaded MLflow model artifact to local path: '{model_dir}'")
                 self.model_dir = model_dir

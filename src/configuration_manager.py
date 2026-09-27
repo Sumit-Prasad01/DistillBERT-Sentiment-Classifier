@@ -3,8 +3,11 @@ import sys
 import yaml
 from dataclasses import dataclass
 from typing import List
+from dotenv import load_dotenv
 from utils.custom_exception import CustomException
 from utils.logger import logger
+
+load_dotenv()
 
 
 @dataclass(frozen=True)
@@ -165,9 +168,19 @@ class ConfigurationManager:
 
     def get_mlflow_config(self) -> MLflowConfig:
         cfg = self.config.get("mlflow", {})
+        tracking_uri = os.getenv("MLFLOW_TRACKING_URI") or cfg.get("tracking_uri", "sqlite:///mlflow.db")
+        experiment_name = os.getenv("MLFLOW_EXPERIMENT_NAME") or cfg.get("experiment_name", "DistilBERT-Sentiment-Classifier")
+        run_name = os.getenv("MLFLOW_RUN_NAME") or cfg.get("run_name", "distilbert-base-uncased-run")
+        
+        env_log_models = os.getenv("MLFLOW_LOG_MODELS")
+        if env_log_models is not None:
+            log_models = env_log_models.strip().lower() in ("true", "1", "yes")
+        else:
+            log_models = bool(cfg.get("log_models", True))
+
         return MLflowConfig(
-            tracking_uri=cfg.get("tracking_uri", "sqlite:///mlflow.db"),
-            experiment_name=cfg.get("experiment_name", "DistilBERT-Sentiment-Classifier"),
-            run_name=cfg.get("run_name", "distilbert-base-uncased-run"),
-            log_models=bool(cfg.get("log_models", True)),
+            tracking_uri=tracking_uri,
+            experiment_name=experiment_name,
+            run_name=run_name,
+            log_models=log_models,
         )

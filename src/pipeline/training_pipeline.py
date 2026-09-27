@@ -1,6 +1,7 @@
 import os
 import sys
 import mlflow
+import mlflow.transformers
 from src.configuration_manager import ConfigurationManager
 from src.components.data_ingestion import DataIngestion
 from src.components.data_transformation import DataTransformation
@@ -139,7 +140,6 @@ class TrainingPipeline:
 
                     # Log MLflow transformers flavor for pyfunc serving
                     try:
-                        import mlflow.transformers
                         mlflow.transformers.log_model(
                             transformers_model={
                                 "model": training_results["trainer"].model,
