@@ -14,9 +14,9 @@ def parse_args():
     parser.add_argument(
         "--mode",
         type=str,
-        choices=["train", "predict"],
+        choices=["train", "predict", "push_to_hf"],
         default="train",
-        help="Execution mode: 'train' (full training pipeline) or 'predict' (inference on text)",
+        help="Execution mode: 'train' (full training pipeline), 'predict' (inference on text), or 'push_to_hf' (upload model to Hugging Face Hub)",
     )
     parser.add_argument(
         "--text",
@@ -33,8 +33,32 @@ def parse_args():
     parser.add_argument(
         "--model_dir",
         type=str,
-        default="artifacts/model",
-        help="Path to the saved model directory or MLflow URI (runs:/... or models:/...) for prediction",
+        default=None,
+        help="Path to saved model directory or MLflow URI (runs:/... or models:/...). Defaults to 'artifacts/model' for prediction, or Run-2 champion artifact for push_to_hf",
+    )
+    parser.add_argument(
+        "--repo_id",
+        type=str,
+        default="distilbert-sentiment-classifier",
+        help="Hugging Face repository ID (e.g., 'your-username/distilbert-sentiment-classifier' or 'distilbert-sentiment-classifier'). Defaults to 'distilbert-sentiment-classifier'",
+    )
+    parser.add_argument(
+        "--hf_token",
+        type=str,
+        default=None,
+        help="Hugging Face Hub API write token (overrides HF_TOKEN from environment/.env)",
+    )
+    parser.add_argument(
+        "--private",
+        action="store_true",
+        default=False,
+        help="Upload repository as private on Hugging Face Hub",
+    )
+    parser.add_argument(
+        "--commit_message",
+        type=str,
+        default="Upload fine-tuned DistilBERT sentiment classifier (Run-2)",
+        help="Git commit message for Hugging Face Hub upload",
     )
     parser.add_argument(
         "--experiment_name",
@@ -93,9 +117,10 @@ def main():
             print("=" * 60 + "\n")
 
         elif args.mode == "predict":
-            logger.info(f"Running inference on: \"{args.text}\"")
+            model_dir = args.model_dir or "artifacts/model"
+            logger.info(f"Running inference on: \"{args.text}\" (model_dir='{model_dir}')")
             predictor = PredictionPipeline(
-                model_dir=args.model_dir,
+                model_dir=model_dir,
                 tracking_uri=args.tracking_uri,
             )
             result = predictor.predict(args.text)
@@ -108,6 +133,29 @@ def main():
             print("Probabilities:")
             for label, prob in result["probabilities"].items():
                 print(f"  {label:<10s}: {prob:.2%}")
+            print("=" * 60 + "\n")
+
+        elif args.mode == "push_to_hf":
+            from push_to_hf import push_to_huggingface
+
+            repo_id = args.repo_id or "distilbert-sentiment-classifier"
+            logger.info(f"Initiating push of Run-2 model to Hugging Face: {repo_id}...")
+            result = push_to_huggingface(
+                repo_id=repo_id,
+                model_dir=args.model_dir,
+                token=args.hf_token,
+                private=args.private,
+                commit_message=args.commit_message,
+                tracking_uri=args.tracking_uri,
+            )
+
+            print("\n" + "=" * 60)
+            print("HUGGING FACE HUB UPLOAD SUCCESSFUL:")
+            print("=" * 60)
+            print(f"Repository:   {result['repo_id']}")
+            print(f"Model URL:    {result['repo_url']}")
+            print(f"Source Path:  {result['source_path']}")
+            print(f"Visibility:   {'Private' if result['private'] else 'Public'}")
             print("=" * 60 + "\n")
 
     except Exception as e:

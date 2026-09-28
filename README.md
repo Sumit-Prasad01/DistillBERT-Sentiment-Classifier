@@ -5,6 +5,7 @@ A production-grade, modular refactoring of the DistilBERT sentiment classificati
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![PyTorch 2.5+](https://img.shields.io/badge/PyTorch-2.5%2B%20CUDA-ee4c2c.svg)](https://pytorch.org/)
 [![Transformers 4.x](https://img.shields.io/badge/Transformers-HuggingFace-yellow.svg)](https://huggingface.co/)
+[![Hugging Face Model](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-ZyroGod%2Fdistilbert--sentiment--classifier-ffcc00.svg)](https://huggingface.co/ZyroGod/distilbert-sentiment-classifier)
 [![MLflow Tracking](https://img.shields.io/badge/MLflow-Experiment%20Tracking-0194E2.svg)](https://mlflow.org/)
 [![C++17 Accelerated](https://img.shields.io/badge/C%2B%2B17-pybind11%20Extension-00599C.svg)](https://github.com/pybind/pybind11)
 
@@ -12,6 +13,7 @@ A production-grade, modular refactoring of the DistilBERT sentiment classificati
 
 ## Documentation Index
 
+- 🤗 [**Hugging Face Hub Model (ZyroGod/distilbert-sentiment-classifier)**](https://huggingface.co/ZyroGod/distilbert-sentiment-classifier): Official repository with fine-tuned weights, tokenizer, and interactive inference widget.
 - 📋 [**System Architecture Documentation (System_Architecture.md)**](System_Architecture.md): Complete architecture diagrams (flowcharts, sequence flows, ER model), subsystem breakdowns, C++ pybind11 translation layer, and deployment topologies.
 - 📊 [**Model Evaluation Report (Eval_Report.md)**](Eval_Report.md): Empirical benchmark report across training runs, confusion matrix analysis, class-level precision/recall/F1 metrics, and VRAM memory profiling.
 
@@ -187,6 +189,48 @@ Probabilities:
   neutral   : 15.82%
   positive  : 75.88%
 ============================================================
+```
+
+#### Option D: Direct Inference from Hugging Face Hub (Zero Setup)
+Load and run inference with the champion model directly from Hugging Face in any Python environment:
+
+```python
+from transformers import pipeline
+
+# Load pipeline directly from Hugging Face Hub
+classifier = pipeline("sentiment-analysis", model="ZyroGod/distilbert-sentiment-classifier")
+
+# Run inference
+sample_text = "I absolutely love this product! Best purchase ever!"
+prediction = classifier(sample_text)
+print(prediction)
+# Output: [{'label': 'positive', 'score': 0.7588}]
+```
+
+---
+
+### 6. Published Hugging Face Model (Run-2 Champion)
+
+The fine-tuned champion model is published and accessible live on the Hugging Face Hub:
+👉 **[ZyroGod/distilbert-sentiment-classifier](https://huggingface.co/ZyroGod/distilbert-sentiment-classifier)**
+
+It features complete model weights (`model.safetensors`), fast tokenizer configurations, exact class mappings (`negative`, `neutral`, `positive`), confusion matrix plots, and automated benchmark cards.
+
+#### To Re-publish or Update via Unified CLI (`main.py`):
+```powershell
+# Standard push (uses HF_TOKEN from .env and auto-resolves username namespace)
+.\.venv\Scripts\python.exe main.py --mode push_to_hf --repo_id "ZyroGod/distilbert-sentiment-classifier"
+
+# Quick push with default repo name 'distilbert-sentiment-classifier'
+.\.venv\Scripts\python.exe main.py --mode push_to_hf
+
+# Specify custom token or private repo flag if needed
+.\.venv\Scripts\python.exe main.py --mode push_to_hf --repo_id "ZyroGod/distilbert-sentiment-classifier" --hf_token "hf_xxx" --private
+```
+
+#### To Re-publish via Dedicated Script (`push_to_hf.py`):
+```powershell
+.\.venv\Scripts\python.exe push_to_hf.py --repo_id "ZyroGod/distilbert-sentiment-classifier"
 ```
 
 ---
